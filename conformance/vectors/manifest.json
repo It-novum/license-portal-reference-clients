@@ -1,0 +1,229 @@
+{
+  "keys" : "keys.json",
+  "algorithm" : "ed25519",
+  "licenseKey" : "9F2C41A0-7B3D5E61-C08A2F94-17D3B6E5",
+  "type" : "license",
+  "now" : "2026-01-15T00:00:00Z",
+  "skewSeconds" : 300,
+  "cases" : [ {
+    "name" : "encrypted",
+    "file" : "license-files/encrypted.lic",
+    "outcome" : "VALID",
+    "payload" : {
+      "v" : 1,
+      "typ" : "license",
+      "kid" : "0192e4a1-0000-7000-8000-000000000001",
+      "tenant" : "7c1e0000-0000-4000-8000-000000000001",
+      "issued" : "2026-01-01T00:00:00Z",
+      "expiry" : "2026-01-31T00:00:00Z",
+      "ttl" : 2592000,
+      "license" : {
+        "id" : "0192e9b3-0000-7000-8000-000000000001",
+        "product" : "0192e4a0-0000-7000-8000-000000000001",
+        "policy" : "0192e4a2-0000-7000-8000-000000000001",
+        "customer" : "0192e8d5-0000-7000-8000-000000000001",
+        "notBefore" : "2026-01-01T00:00:00Z",
+        "expiry" : "2026-12-31T00:00:00Z",
+        "entitlements" : [ "API", "REPORTS" ],
+        "metadata" : {
+          "beta" : true,
+          "maxVersion" : "3",
+          "note" : null,
+          "regions" : [ "EU", "US" ],
+          "seats" : 25,
+          "support" : {
+            "tier" : "gold"
+          }
+        }
+      }
+    }
+  }, {
+    "name" : "expired",
+    "file" : "license-files/expired.lic",
+    "outcome" : "EXPIRED"
+  }, {
+    "name" : "issued-in-future",
+    "file" : "license-files/issued-in-future.lic",
+    "outcome" : "NOT_YET_VALID"
+  }, {
+    "name" : "kid-mismatch",
+    "file" : "license-files/kid-mismatch.lic",
+    "outcome" : "MALFORMED"
+  }, {
+    "name" : "license-expired",
+    "file" : "license-files/license-expired.lic",
+    "outcome" : "EXPIRED"
+  }, {
+    "name" : "machine-domain",
+    "file" : "license-files/machine-domain.lic",
+    "outcome" : "BAD_SIGNATURE"
+  }, {
+    "name" : "no-armour",
+    "file" : "license-files/no-armour.lic",
+    "outcome" : "MALFORMED"
+  }, {
+    "name" : "no-expiry",
+    "file" : "license-files/no-expiry.lic",
+    "outcome" : "VALID",
+    "payload" : {
+      "v" : 1,
+      "typ" : "license",
+      "kid" : "0192e4a1-0000-7000-8000-000000000001",
+      "tenant" : "7c1e0000-0000-4000-8000-000000000001",
+      "issued" : "2026-01-01T00:00:00Z",
+      "expiry" : null,
+      "ttl" : null,
+      "license" : {
+        "id" : "0192e9b3-0000-7000-8000-000000000001",
+        "product" : "0192e4a0-0000-7000-8000-000000000001",
+        "policy" : "0192e4a2-0000-7000-8000-000000000001",
+        "customer" : "0192e8d5-0000-7000-8000-000000000001",
+        "notBefore" : "2026-01-01T00:00:00Z",
+        "expiry" : "2026-12-31T00:00:00Z",
+        "entitlements" : [ "API", "REPORTS" ],
+        "metadata" : {
+          "beta" : true,
+          "maxVersion" : "3",
+          "note" : null,
+          "regions" : [ "EU", "US" ],
+          "seats" : 25,
+          "support" : {
+            "tier" : "gold"
+          }
+        }
+      }
+    }
+  }, {
+    "name" : "no-not-before",
+    "file" : "license-files/no-not-before.lic",
+    "outcome" : "MALFORMED"
+  }, {
+    "name" : "not-started",
+    "file" : "license-files/not-started.lic",
+    "outcome" : "NOT_YET_VALID"
+  }, {
+    "name" : "perpetual",
+    "file" : "license-files/perpetual.lic",
+    "outcome" : "VALID",
+    "payload" : {
+      "v" : 1,
+      "typ" : "license",
+      "kid" : "0192e4a1-0000-7000-8000-000000000001",
+      "tenant" : "7c1e0000-0000-4000-8000-000000000001",
+      "issued" : "2020-01-01T00:00:00Z",
+      "expiry" : null,
+      "ttl" : null,
+      "license" : {
+        "id" : "0192e9b3-0000-7000-8000-000000000001",
+        "product" : "0192e4a0-0000-7000-8000-000000000001",
+        "policy" : "0192e4a2-0000-7000-8000-000000000001",
+        "customer" : "0192e8d5-0000-7000-8000-000000000001",
+        "notBefore" : "2020-01-01T00:00:00Z",
+        "expiry" : null,
+        "entitlements" : [ "API", "REPORTS" ],
+        "metadata" : {
+          "beta" : true,
+          "maxVersion" : "3",
+          "note" : null,
+          "regions" : [ "EU", "US" ],
+          "seats" : 25,
+          "support" : {
+            "tier" : "gold"
+          }
+        }
+      }
+    }
+  }, {
+    "name" : "tampered-enc",
+    "file" : "license-files/tampered-enc.lic",
+    "outcome" : "BAD_SIGNATURE"
+  }, {
+    "name" : "tampered-sig",
+    "file" : "license-files/tampered-sig.lic",
+    "outcome" : "BAD_SIGNATURE"
+  }, {
+    "name" : "typ-mismatch",
+    "file" : "license-files/typ-mismatch.lic",
+    "outcome" : "MALFORMED"
+  }, {
+    "name" : "unknown-field",
+    "file" : "license-files/unknown-field.lic",
+    "outcome" : "VALID",
+    "payload" : {
+      "v" : 1,
+      "typ" : "license",
+      "kid" : "0192e4a1-0000-7000-8000-000000000001",
+      "tenant" : "7c1e0000-0000-4000-8000-000000000001",
+      "issued" : "2026-01-01T00:00:00Z",
+      "expiry" : "2026-01-31T00:00:00Z",
+      "ttl" : 2592000,
+      "license" : {
+        "id" : "0192e9b3-0000-7000-8000-000000000001",
+        "product" : "0192e4a0-0000-7000-8000-000000000001",
+        "policy" : "0192e4a2-0000-7000-8000-000000000001",
+        "customer" : "0192e8d5-0000-7000-8000-000000000001",
+        "notBefore" : "2026-01-01T00:00:00Z",
+        "expiry" : "2026-12-31T00:00:00Z",
+        "entitlements" : [ "API", "REPORTS" ],
+        "metadata" : {
+          "beta" : true,
+          "maxVersion" : "3",
+          "note" : null,
+          "regions" : [ "EU", "US" ],
+          "seats" : 25,
+          "support" : {
+            "tier" : "gold"
+          }
+        }
+      }
+    }
+  }, {
+    "name" : "unknown-kid",
+    "file" : "license-files/unknown-kid.lic",
+    "outcome" : "KEY_UNKNOWN"
+  }, {
+    "name" : "valid",
+    "file" : "license-files/valid.lic",
+    "outcome" : "VALID",
+    "payload" : {
+      "v" : 1,
+      "typ" : "license",
+      "kid" : "0192e4a1-0000-7000-8000-000000000001",
+      "tenant" : "7c1e0000-0000-4000-8000-000000000001",
+      "issued" : "2026-01-01T00:00:00Z",
+      "expiry" : "2026-01-31T00:00:00Z",
+      "ttl" : 2592000,
+      "license" : {
+        "id" : "0192e9b3-0000-7000-8000-000000000001",
+        "product" : "0192e4a0-0000-7000-8000-000000000001",
+        "policy" : "0192e4a2-0000-7000-8000-000000000001",
+        "customer" : "0192e8d5-0000-7000-8000-000000000001",
+        "notBefore" : "2026-01-01T00:00:00Z",
+        "expiry" : "2026-12-31T00:00:00Z",
+        "entitlements" : [ "API", "REPORTS" ],
+        "metadata" : {
+          "beta" : true,
+          "maxVersion" : "3",
+          "note" : null,
+          "regions" : [ "EU", "US" ],
+          "seats" : 25,
+          "support" : {
+            "tier" : "gold"
+          }
+        }
+      }
+    }
+  }, {
+    "name" : "version-2",
+    "file" : "license-files/version-2.lic",
+    "outcome" : "UNSUPPORTED_VERSION"
+  }, {
+    "name" : "wrong-alg",
+    "file" : "license-files/wrong-alg.lic",
+    "outcome" : "UNEXPECTED_ALGORITHM"
+  }, {
+    "name" : "wrong-license-key",
+    "file" : "license-files/wrong-license-key.lic",
+    "outcome" : "DECRYPTION_FAILED"
+  } ]
+}

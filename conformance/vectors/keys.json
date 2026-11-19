@@ -1,0 +1,7 @@
+[ {
+  "type" : "signing-key",
+  "kid" : "0192e4a1-0000-7000-8000-000000000001",
+  "alg" : "ed25519",
+  "state" : "ACTIVE",
+  "publicKey" : "MCowBQYDK2VwAyEAebVWLo/mVPlAeLES6KmLp5AfhTrmlb7X4OORC60ElmQ="
+} ]
