@@ -18,7 +18,7 @@ import tools.jackson.databind.json.JsonMapper;
  */
 class ConformanceTest {
 
-    private static final Path VECTORS = Path.of("../conformance/vectors");
+    private static final Path VECTORS = Path.of("../vectors");
     private static final JsonMapper JSON = JsonMapper.builder().build();
 
     @Test

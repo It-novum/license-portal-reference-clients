@@ -1,6 +1,6 @@
 # Java reference client
 
-A small, readable example of verifying license files offline, for anyone writing a client of their own. It makes every check a license file needs, in the order that gives each file one outcome, and passes the conformance vectors in [`conformance/vectors`](../conformance/vectors). Copy what you need: it targets Java 17 and uses only the JDK and Jackson.
+A small, readable example of verifying license files offline, for anyone writing a client of their own. It makes every check a license file needs, in the order that gives each file one outcome, and passes the conformance vectors in [`vectors`](../vectors). Copy what you need: it targets Java 17 and uses only the JDK and Jackson.
 
 ## What your build compiles in
 
@@ -91,7 +91,7 @@ The two expiries are separate: a file is valid only while both its own `expiry` 
 ```
 ./gradlew :jvm:compileJava
 java -cp "jvm/build/classes/java/main:<jackson jars>" com.itnovum.license.reference.Example \
-    conformance/vectors/keys.json conformance/vectors/license-files/encrypted.lic 9F2C41A0-7B3D5E61-C08A2F94-17D3B6E5 3.1 2026-01-15T00:00:00Z
+    vectors/keys.json vectors/license-files/encrypted.lic 9F2C41A0-7B3D5E61-C08A2F94-17D3B6E5 3.1 2026-01-15T00:00:00Z
 ```
 
 The third argument is the license key, or `-` for none. The last is the time to check at; the vectors' files are checked at the time their manifest gives.

@@ -13,7 +13,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 class ClockMarkTest {
 
-    private static final Path VECTORS = Path.of("../conformance/vectors");
+    private static final Path VECTORS = Path.of("../vectors");
     private static final Duration SKEW = Duration.ofMinutes(5);
     private static final Instant NOW = Instant.parse("2026-01-15T00:00:00Z");
 

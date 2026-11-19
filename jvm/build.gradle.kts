@@ -15,5 +15,5 @@ tasks.withType<JavaCompile>().configureEach { options.release = 17 }
 tasks.named<Test>("test") {
     useJUnitPlatform()
     // The tests read the conformance vectors from disk, so a changed vector runs them again rather than leaving a broken client up to date.
-    inputs.dir(rootProject.layout.projectDirectory.dir("conformance/vectors")).withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName("vectors")
+    inputs.dir(rootProject.layout.projectDirectory.dir("vectors")).withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName("vectors")
 }

@@ -25,7 +25,7 @@ import tools.jackson.databind.node.ObjectNode;
  */
 class LicenseFileVerifierTest {
 
-    private static final Path VECTORS = Path.of("../conformance/vectors");
+    private static final Path VECTORS = Path.of("../vectors");
     private static final JsonMapper JSON = JsonMapper.builder().build();
     private static final Duration SKEW = Duration.ofMinutes(5);
 

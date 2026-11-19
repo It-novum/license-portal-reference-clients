@@ -3,7 +3,7 @@
 Small, readable examples of verifying license files offline, for anyone writing a client of their own, and the conformance vectors every client should pass.
 
 - [`jvm/`](jvm): the Java reference. Its README describes the file format and how to use it.
-- [`conformance/vectors/`](conformance/vectors): license files with known answers. Run your own verifier over them.
+- [`vectors/`](vectors): license files with known answers. Run your own verifier over them.
 
 ## Building
 
