@@ -8,12 +8,13 @@ A license file is a signed document a vendor hands to its customer. An applicati
 
 ## What a client does
 
-1. **Compiles in the product's public keys.** Nothing else in the build may supply them, so a replaced file can't change which keys are trusted.
+1. **Compiles in the product's public keys and its id.** Nothing else in the build may supply them, so a replaced file can't change which keys are trusted.
 2. **Checks the signature before anything else.** Only a file that verifies under a compiled-in key is read any further.
 3. **Opens an encrypted file with the license key** the vendor handed out with the license.
-4. **Checks the times:** when the file was issued, when the license starts, and both expiries. A clock mark stops a clock set back from reviving an expired file.
-5. **Reports every refusal as an outcome,** never as a crash, and unlocks features only for a valid file.
-6. **Asks for a new file** well before the current one expires.
+4. **Checks the product,** because the vendor's keys sign the files of every product it sells.
+5. **Checks the times:** when the file was issued, when the license starts, and both expiries. A clock mark stops a clock set back from reviving an expired file.
+6. **Reports every refusal as an outcome,** never as a crash, and unlocks features only for a valid file.
+7. **Asks for a new file** well before the current one expires.
 
 The vectors name an outcome for every way a file can fail, and the order of the checks decides which outcome a file gets.
 
@@ -28,7 +29,7 @@ A license file has three layers. The vectors are the precise reference; this is 
 - `enc`: the payload, encoded as `alg` says.
 - `sig`: the base64 Ed25519 signature over the UTF-8 bytes of `"license/" + enc`. The prefix keeps a signature made for another kind of file from passing as a license file. Check it before reading anything in `enc`, so unsigned bytes never reach your decryption or parser.
 - `alg`: `base64+ed25519`, where `enc` is the base64 of the payload JSON, or `aes-256-gcm+ed25519`, where `enc` is `base64(ciphertext).base64(iv).base64(tag)`. That is AES-256-GCM with a 96-bit IV, a 128-bit tag and no associated data, keyed by the SHA-256 of the license key's exact UTF-8 text. Accept only these two values, and never let the file choose the signature algorithm.
-- `kid`: the id of the product key that signed the file, which your build looks up in its compiled-in keys.
+- `kid`: the id of the vendor's key that signed the file, which your build looks up in its compiled-in keys.
 
 **Payload.** `enc` decoded, as in `vectors/license-files/valid.lic`:
 
@@ -54,12 +55,12 @@ A license file has three layers. The vectors are the precise reference; this is 
 | `v` | integer | The format version. Refuse a higher one than you know, because its fields may mean something else. |
 | `typ` | string | Must be `license`. |
 | `kid` | uuid string | Must equal the envelope's `kid`, so a file can't be re-labelled with another key. |
-| `tenant` | uuid string | The vendor's account. Nothing to check: your product's key already proves where the file came from. |
+| `tenant` | uuid string | The vendor's account. Nothing to check: the vendor's key already proves where the file came from. |
 | `issued` | instant | When the file was made. Refuse it while more than your clock skew in the future. |
 | `expiry` | instant or `null` | When this file stops being valid. `null` means the file never expires. Ask for a new file before it. |
 | `ttl` | seconds or `null` | The file's lifetime. `null` exactly when `expiry` is; a file with only one of them is malformed. |
 | `license.id` | uuid string | The license. |
-| `license.product` | uuid string | Your product. Nothing to check, for the same reason as `tenant`. |
+| `license.product` | uuid string | Must be your product's id. The vendor's key signs for all its products, so a file for another one verifies too and has to be refused here. |
 | `license.policy` | uuid string | The license's policy, for example to tell a trial from a full license. |
 | `license.customer` | uuid string | The customer's id. The file carries no name. To show "licensed to", read a company name from `metadata` if the vendor put one there; a person's name never belongs in a file, because a file travels where it can't be erased later. |
 | `license.notBefore` | instant | When the license starts, which can be after `issued`. Until then the file isn't valid yet, so keep it. |

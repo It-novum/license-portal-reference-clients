@@ -3,6 +3,7 @@
   "algorithm" : "ed25519",
   "licenseKey" : "9F2C41A0-7B3D5E61-C08A2F94-17D3B6E5",
   "type" : "license",
+  "product" : "0192e4a0-0000-7000-8000-000000000001",
   "now" : "2026-01-15T00:00:00Z",
   "skewSeconds" : 300,
   "cases" : [ {
@@ -225,5 +226,9 @@
     "name" : "wrong-license-key",
     "file" : "license-files/wrong-license-key.lic",
     "outcome" : "DECRYPTION_FAILED"
+  }, {
+    "name" : "wrong-product",
+    "file" : "license-files/wrong-product.lic",
+    "outcome" : "WRONG_PRODUCT"
   } ]
 }

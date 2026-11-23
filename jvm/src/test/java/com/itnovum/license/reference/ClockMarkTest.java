@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -22,7 +23,7 @@ class ClockMarkTest {
     }
 
     private static LicenseFileVerifier verifier(ClockMark mark) throws IOException {
-        return new LicenseFileVerifier(ProductKeys.parse(Files.readString(VECTORS.resolve("keys.json"), StandardCharsets.UTF_8)), mark, SKEW);
+        return new LicenseFileVerifier(ProductKeys.parse(Files.readString(VECTORS.resolve("keys.json"), StandardCharsets.UTF_8)), UUID.fromString("0192e4a0-0000-7000-8000-000000000001"), mark, SKEW);
     }
 
     @Test

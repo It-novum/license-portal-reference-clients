@@ -18,7 +18,8 @@ import tools.jackson.databind.json.JsonMapper;
  * replaced. Nothing refreshes these keys: a new key reaches clients only in a new build.
  *
  * <p>
- * Every Ed25519 key in the list is trusted, whatever its {@code state}. During a key rotation the list holds the old key and the next one, and a build has to verify files signed by either. Fields
+ * The keys belong to the vendor and may sign for its other products too, which is why {@link LicenseFileVerifier} also checks the product. Every Ed25519 key in the list is trusted,
+ * whatever its {@code state}. When the vendor moves to another key, the list holds the old key and the next one, and a build has to verify files signed by either. Fields
  * this build doesn't know are ignored, so a key list with fields added later still parses.
  */
 public final class ProductKeys {

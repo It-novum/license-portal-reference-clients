@@ -18,7 +18,7 @@ public enum Outcome {
      */
     UNEXPECTED_ALGORITHM,
     /**
-     * None of the keys this build compiles in has the file's {@code kid}. A file for another product ends here, because only your product's keys are compiled in.
+     * None of the keys this build compiles in has the file's {@code kid}. A file from another vendor ends here.
      */
     KEY_UNKNOWN,
     /**
@@ -34,6 +34,10 @@ public enum Outcome {
      * The file is a newer version of the format than this build understands. Keep any file you already hold.
      */
     UNSUPPORTED_VERSION,
+    /**
+     * The file is signed correctly, but carries a license for another of the vendor's products. The vendor's keys sign for every product it sells, so only this check tells them apart.
+     */
+    WRONG_PRODUCT,
     /**
      * The file was issued later than the current time allows, so the machine's clock is behind: check the clock and try again. Or the license it carries starts later: keep the file and check
      * it again then, when it becomes valid.

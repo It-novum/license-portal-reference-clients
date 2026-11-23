@@ -4,16 +4,17 @@ A small, readable example of verifying license files offline, for anyone writing
 
 ## What your build compiles in
 
-- **The product's keys.** Take them once from the license portal (`GET /api/tenants/{tenant}/products/{id}/keys`) and compile the list into the build. Never read it from a file beside the application or fetch it at start-up, because either can be replaced. Nothing refreshes the keys: after a key rotation, a new build carries the new key.
+- **The product's keys.** Take them once from the license portal (`GET /api/tenants/{tenant}/products/{id}/keys`) and compile the list into the build. Never read it from a file beside the application or fetch it at start-up, because either can be replaced. Nothing refreshes the keys: after a key rotation, a new build carries the new key. Trust every key in the list, whatever its `state`: a key listed as `NEXT` is the one the vendor moves to.
+- **The product's id**, the one its licenses name, which the vendor gives you with the keys.
 - **The expected signature algorithm**, `ed25519`, which the verifier fixes. A file's `alg` is `base64+ed25519` or `aes-256-gcm+ed25519`, because the vendor's policy decides whether its files are encrypted, and the verifier reads both.
 
-The verifier checks neither the file's tenant nor its product. Only your product's keys are compiled in, and they sign for nothing else, so a file that verifies is for your product. A file for any other product is `KEY_UNKNOWN`.
+The verifier checks the file's product but not its tenant. The keys belong to the vendor and sign the files of every product it sells, so a file that verifies can still be for another of them: that file is `WRONG_PRODUCT`. A file from another vendor is `KEY_UNKNOWN`, because none of its keys are compiled in.
 
 ## Verifying a file
 
 ```java
 var keys = ProductKeys.parse(PRODUCT_KEYS);
-var verifier = new LicenseFileVerifier(keys, licenseKey, new ClockMark.InFile(markFile), Duration.ofMinutes(5));
+var verifier = new LicenseFileVerifier(keys, PRODUCT_ID, licenseKey, new ClockMark.InFile(markFile), Duration.ofMinutes(5));
 
 var verification = verifier.verify(licenseFileText, Instant.now());
 if (verification instanceof Verification.Verified verified) {
@@ -39,7 +40,7 @@ if (verification instanceof Verification.Verified verified) {
 ```
 ./gradlew :jvm:compileJava
 java -cp "jvm/build/classes/java/main:<jackson jars>" com.itnovum.license.reference.Example \
-    vectors/keys.json vectors/license-files/encrypted.lic 9F2C41A0-7B3D5E61-C08A2F94-17D3B6E5 3.1 2026-01-15T00:00:00Z
+    vectors/keys.json 0192e4a0-0000-7000-8000-000000000001 vectors/license-files/encrypted.lic 9F2C41A0-7B3D5E61-C08A2F94-17D3B6E5 3.1 2026-01-15T00:00:00Z
 ```
 
-The third argument is the license key, or `-` for none. The last is the time to check at; the vectors' files are checked at the time their manifest gives.
+The second argument is the product's id, and the fourth the license key, or `-` for none. The last is the time to check at; the vectors' files are checked at the time their manifest gives.

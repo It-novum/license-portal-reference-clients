@@ -14,13 +14,15 @@ import java.security.spec.NamedParameterSpec;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.UUID;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
 
 /**
- * What the conformance vectors can't show at their one time: a file without an expiry long after it was issued, and a file whose expiry and ttl disagree. The second is signed here with the
+ * What the conformance vectors can't show at their one time: a file without an expiry long after it was issued, another product's file that has also expired, and a file whose expiry and ttl
+ * disagree. The second is signed here with the
  * vectors' test key, whose seed is public, so the file reaches the check it is about.
  */
 class LicenseFileVerifierTest {
@@ -28,13 +30,14 @@ class LicenseFileVerifierTest {
     private static final Path VECTORS = Path.of("../vectors");
     private static final JsonMapper JSON = JsonMapper.builder().build();
     private static final Duration SKEW = Duration.ofMinutes(5);
+    private static final UUID PRODUCT = UUID.fromString("0192e4a0-0000-7000-8000-000000000001");
 
     private static String vector(String name) throws IOException {
         return Files.readString(VECTORS.resolve(name), StandardCharsets.UTF_8);
     }
 
     private static LicenseFileVerifier verifier() throws IOException {
-        return new LicenseFileVerifier(ProductKeys.parse(vector("keys.json")), new ClockMark.InMemory(), SKEW);
+        return new LicenseFileVerifier(ProductKeys.parse(vector("keys.json")), PRODUCT, new ClockMark.InMemory(), SKEW);
     }
 
     /**
@@ -88,9 +91,17 @@ class LicenseFileVerifierTest {
         var now = Instant.parse("2026-01-15T00:00:00Z");
         var keys = ProductKeys.parse(vector("keys.json"));
 
-        assertThat(new LicenseFileVerifier(keys, "9F2C41A0-7B3D5E61-C08A2F94-17D3B6E5", new ClockMark.InMemory(), SKEW).verify(file, now).outcome()).isEqualTo(Outcome.VALID);
+        assertThat(new LicenseFileVerifier(keys, PRODUCT, "9F2C41A0-7B3D5E61-C08A2F94-17D3B6E5", new ClockMark.InMemory(), SKEW).verify(file, now).outcome()).isEqualTo(Outcome.VALID);
         assertThat(verifier().verify(file, now).outcome()).isEqualTo(Outcome.DECRYPTION_FAILED);
-        assertThat(new LicenseFileVerifier(keys, "9f2c41a0-7b3d5e61-c08a2f94-17d3b6e5", new ClockMark.InMemory(), SKEW).verify(file, now).outcome()).isEqualTo(Outcome.DECRYPTION_FAILED);
+        assertThat(new LicenseFileVerifier(keys, PRODUCT, "9f2c41a0-7b3d5e61-c08a2f94-17d3b6e5", new ClockMark.InMemory(), SKEW).verify(file, now).outcome()).isEqualTo(Outcome.DECRYPTION_FAILED);
+    }
+
+    @Test
+    void anotherProductsFileIsRefusedBeforeItsTimesAreChecked() throws IOException {
+        var file = vector("license-files/wrong-product.lic");
+
+        assertThat(verifier().verify(file, Instant.parse("2026-01-15T00:00:00Z")).outcome()).isEqualTo(Outcome.WRONG_PRODUCT);
+        assertThat(verifier().verify(file, Instant.parse("2027-06-01T00:00:00Z")).outcome()).as("expired too").isEqualTo(Outcome.WRONG_PRODUCT);
     }
 
     @Test

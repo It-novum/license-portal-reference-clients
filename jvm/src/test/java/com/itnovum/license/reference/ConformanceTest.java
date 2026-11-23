@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -27,10 +28,11 @@ class ConformanceTest {
         var keys = ProductKeys.parse(Files.readString(VECTORS.resolve(manifest.get("keys").asString()), StandardCharsets.UTF_8));
         var now = Instant.parse(manifest.get("now").asString());
         var skew = Duration.ofSeconds(manifest.get("skewSeconds").asLong());
+        var product = UUID.fromString(manifest.get("product").asString());
 
         for (var vector : manifest.get("cases")) {
             var name = vector.get("name").asString();
-            var verifier = new LicenseFileVerifier(keys, manifest.get("licenseKey").asString(), new ClockMark.InMemory(), skew);
+            var verifier = new LicenseFileVerifier(keys, product, manifest.get("licenseKey").asString(), new ClockMark.InMemory(), skew);
 
             var verification = verifier.verify(Files.readString(VECTORS.resolve(vector.get("file").asString()), StandardCharsets.UTF_8), now);
 

@@ -27,11 +27,12 @@ import tools.jackson.databind.json.JsonMapper;
  * Verifies license files offline. The checks run in a fixed order and the first that fails decides the outcome, so a file has exactly one outcome, the one the conformance vectors give.
  *
  * <p>
- * Build one per product, with the product's keys compiled into the application. Pass the current time to {@link #verify}, so tests can check a file at any time; the application passes
- * {@code Instant.now()}.
+ * Build one per product, with the product's keys and its id compiled into the application. Pass the current time to {@link #verify}, so tests can check a file at any time; the application
+ * passes {@code Instant.now()}.
  *
  * <p>
- * It checks neither the file's tenant nor its product. The compiled-in keys sign for your product only, so a signature that verifies with one of them already proves both.
+ * It checks the file's product but not its tenant. The compiled-in keys belong to the vendor and sign the files of every product the vendor sells, so a file that verifies may carry another
+ * product's license. A signature that verifies does prove the vendor, so the tenant needs no check.
  *
  * <p>
  * The vendor's policy decides whether a license's files are encrypted, so read both kinds. An encrypted file opens only with the license key, which the user enters or the application stores
@@ -58,6 +59,7 @@ public final class LicenseFileVerifier {
     private static final JsonMapper JSON = JsonMapper.builder().enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS).build();
 
     private final ProductKeys keys;
+    private final UUID product;
     private final Optional<String> licenseKey;
     private final ClockMark clockMark;
     private final Duration skew;
@@ -65,22 +67,24 @@ public final class LicenseFileVerifier {
     /**
      * For an application that reads only plain files: an encrypted one is {@code DECRYPTION_FAILED}.
      *
+     * @param product your product's id, the one its licenses name, which the vendor gives you with the keys
      * @param skew how far the machine's clock may be off: a file issued up to this long after {@code now} still counts, and {@code now} may lag the clock mark by this much. Five minutes suits most
      *     machines
      */
-    public LicenseFileVerifier(ProductKeys keys, ClockMark clockMark, Duration skew) {
-        this(keys, Optional.empty(), clockMark, skew);
+    public LicenseFileVerifier(ProductKeys keys, UUID product, ClockMark clockMark, Duration skew) {
+        this(keys, product, Optional.empty(), clockMark, skew);
     }
 
     /**
      * @param licenseKey the license key exactly as the vendor issued it, which opens the license's encrypted files. Don't trim or change its case: the file key is the SHA-256 of its exact text
      */
-    public LicenseFileVerifier(ProductKeys keys, String licenseKey, ClockMark clockMark, Duration skew) {
-        this(keys, Optional.of(licenseKey), clockMark, skew);
+    public LicenseFileVerifier(ProductKeys keys, UUID product, String licenseKey, ClockMark clockMark, Duration skew) {
+        this(keys, product, Optional.of(licenseKey), clockMark, skew);
     }
 
-    private LicenseFileVerifier(ProductKeys keys, Optional<String> licenseKey, ClockMark clockMark, Duration skew) {
+    private LicenseFileVerifier(ProductKeys keys, UUID product, Optional<String> licenseKey, ClockMark clockMark, Duration skew) {
         this.keys = keys;
+        this.product = product;
         this.licenseKey = licenseKey;
         this.clockMark = clockMark;
         this.skew = skew;
@@ -157,6 +161,11 @@ public final class LicenseFileVerifier {
         }
 
         var license = license(payload);
+
+        // The product, because the vendor's keys sign for its other products too. Checked before the times, so a file for another product says so whatever its times.
+        if (!product.equals(license.product())) {
+            throw new Refusal(Outcome.WRONG_PRODUCT);
+        }
 
         // A clock set back behind a time already seen, so an expired file can't be revived. Checked before the times below, which such a clock can't decide.
         if (now.isBefore(clockMark.mark().minus(skew))) {
