@@ -1,6 +1,6 @@
 # Java reference client
 
-A small, readable example of verifying license files offline, for anyone writing a client of their own. It makes every check a license file needs, in the order that gives each file one outcome, and passes the conformance vectors in [`vectors`](../vectors). The [file format](../README.md#file-format) is described in the repository's README. Copy what you need: it targets Java 17 and uses only the JDK and Jackson.
+A small, readable example of verifying license files offline and validating a license key online, for anyone writing a client of their own. It makes every check a license file or a signed answer needs, in the order that gives each one outcome, and passes the conformance vectors in [`vectors`](../vectors). The [file format](../README.md#file-format) is described in the repository's README. Copy what you need: it targets Java 17 and uses only the JDK and Jackson.
 
 ## What your build compiles in
 
@@ -35,6 +35,27 @@ if (verification instanceof Verification.Verified verified) {
 - **Metadata is typed.** Its values can be text, numbers, `true` or `false`, `null`, lists or objects. Read a value as the type you expect with `text`, `number` or `flag`, which treat a value of any other type as absent, and read nested values from `metadata()`.
 - **Version binding.** If the vendor set `maxVersion` on the license, `VersionBinding.allows` tells whether this release is covered. `maxVersion` is read as text, and any other type allows nothing.
 
+## Validating a key online
+
+```java
+var validator = new OnlineValidator(URI.create("https://license.example.com/api/tenants/acme"), keys, TENANT_KEY_ID, PRODUCT_ID,
+        new ClockMark.InFile(markFile), Duration.ofMinutes(5), HttpClient.newHttpClient());
+
+var validation = validator.validate(licenseKey);
+switch (validation.outcome()) {
+    case VALID -> unlock(validation.license().orElseThrow());
+    case REFUSED, WRONG_PRODUCT -> lock(validation.code());
+    case ERROR -> logAndFixTheRequest(validation.code());
+    case NETWORK_FAILURE -> retryLaterAndKeepAnyFileYouHold();
+}
+```
+
+- **Every request asks for a signed answer.** It sends `Accept-Signature` naming the compiled-in key `TENANT_KEY_ID`, with a fresh random nonce, and `Content-Digest` with the SHA-256 of its body. The answer has to be signed by that key, over the request's method, host, path, query and digest, and carry the same nonce. Ask for the vendor's tenant key, which signs answers for every product it sells.
+- **Only a verified answer counts.** An unsigned answer, one signed for another request, a `429`, a `5xx`, a timeout or a lost connection is `NETWORK_FAILURE`: nothing about the license changes, and a file you hold stays valid. Retry with backoff and honour `Retry-After`. An attacker who can forge a refusal could otherwise lock a customer out.
+- **Decide on the outcome, never on a code you don't know.** A `REFUSED` answer carries a code, such as `EXPIRED` or `SUSPENDED`, which the vendor may add to; any code is still a refusal.
+- **`AnswerVerifier` makes the checks without a network,** given the request you sent and the answer you got, so you can test your own code with the answer vectors. Its checks run in the order the vectors' README gives.
+- **A verified answer's `Date` raises the clock mark,** so a clock set back after an online check can't revive an expired file.
+
 ## Running the example
 
 ```
@@ -44,3 +65,10 @@ java -cp "jvm/build/classes/java/main:<jackson jars>" com.itnovum.license.refere
 ```
 
 The second argument is the product's id, and the fourth the license key, or `-` for none. The last is the time to check at; the vectors' files are checked at the time their manifest gives.
+
+To validate a key online, pass `validate`, the key list, the product's id, the key to ask for, the vendor's tenant URL and the license key:
+
+```
+java -cp "jvm/build/classes/java/main:<jackson jars>" com.itnovum.license.reference.Example \
+    validate vectors/keys.json 0192e4a0-0000-7000-8000-000000000001 0192e4a1-0000-7000-8000-000000000001 https://license.example.com/api/tenants/acme 9F2C41A0-7B3D5E61-C08A2F94-17D3B6E5
+```

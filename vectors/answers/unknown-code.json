@@ -1,0 +1,24 @@
+{
+  "request" : {
+    "method" : "POST",
+    "authority" : "license.example.com",
+    "path" : "/api/tenants/7c1e0000-0000-4000-8000-000000000001/licenses/actions/validate-key",
+    "query" : null,
+    "headers" : {
+      "accept-signature" : "sig1=();keyid=\"0192e4a1-0000-7000-8000-000000000001\";nonce=\"q4M9tZ2xYv0Rw7Lk\"",
+      "content-type" : "application/json"
+    },
+    "body" : "{\"key\":\"9F2C41A0-7B3D5E61-C08A2F94-17D3B6E5\",\"scope\":{\"product\":\"0192e4a0-0000-7000-8000-000000000001\"}}"
+  },
+  "answer" : {
+    "status" : 200,
+    "headers" : {
+      "content-type" : "application/json",
+      "date" : "Thu, 15 Jan 2026 00:00:00 GMT",
+      "content-digest" : "sha-256=:RU/KMujezhipcaCKl66HQ+enMrKDJv2/c7Pqxa02IDI=:",
+      "signature-input" : "sig1=(\"@method\";req \"@authority\";req \"@path\";req \"@query\";req \"@status\" \"content-digest\" \"date\");created=1768435200;keyid=\"0192e4a1-0000-7000-8000-000000000001\";nonce=\"q4M9tZ2xYv0Rw7Lk\"",
+      "signature" : "sig1=:Pam988hZ1CNfGdinBVoF0S7zPKhHJrvJE+w31WFRkLdFMcIQHtRxE7XpLB57YWNgFf5xz0ov0LNsH5zVyP66CA==:"
+    },
+    "body" : "{\"type\":\"validation\",\"ts\":\"2026-01-15T00:00:00Z\",\"valid\":false,\"code\":\"FUTURE_CODE\",\"detail\":\"A refusal no reader knows yet\",\"scope\":{\"product\":\"0192e4a0-0000-7000-8000-000000000001\"},\"license\":{\"id\":\"0192e9b3-0000-7000-8000-000000000001\",\"product\":\"0192e4a0-0000-7000-8000-000000000001\",\"policy\":\"0192e4a2-0000-7000-8000-000000000001\",\"customer\":\"0192e8d5-0000-7000-8000-000000000001\",\"status\":\"ACTIVE\",\"notBefore\":\"2026-01-01T00:00:00Z\",\"expiry\":\"2026-12-31T00:00:00Z\",\"entitlements\":[\"API\",\"REPORTS\"],\"metadata\":{\"beta\":true,\"maxVersion\":\"3\",\"note\":null,\"regions\":[\"EU\",\"US\"],\"seats\":25,\"support\":{\"tier\":\"gold\"}}}}"
+  }
+}

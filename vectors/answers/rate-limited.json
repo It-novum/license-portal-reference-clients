@@ -1,0 +1,25 @@
+{
+  "request" : {
+    "method" : "POST",
+    "authority" : "license.example.com",
+    "path" : "/api/tenants/7c1e0000-0000-4000-8000-000000000001/licenses/actions/validate-key",
+    "query" : null,
+    "headers" : {
+      "accept-signature" : "sig1=();keyid=\"0192e4a1-0000-7000-8000-000000000001\";nonce=\"q4M9tZ2xYv0Rw7Lk\"",
+      "content-type" : "application/json"
+    },
+    "body" : "{\"key\":\"9F2C41A0-7B3D5E61-C08A2F94-17D3B6E5\",\"scope\":{\"product\":\"0192e4a0-0000-7000-8000-000000000001\"}}"
+  },
+  "answer" : {
+    "status" : 429,
+    "headers" : {
+      "content-type" : "application/problem+json",
+      "date" : "Thu, 15 Jan 2026 00:00:00 GMT",
+      "content-digest" : "sha-256=:gxWNavODjUkIGqkE3q1FRUE7u9ADRiTukWqrpF//+eg=:",
+      "signature-input" : "sig1=(\"@method\";req \"@authority\";req \"@path\";req \"@query\";req \"@status\" \"content-digest\" \"date\");created=1768435200;keyid=\"0192e4a1-0000-7000-8000-000000000001\";nonce=\"q4M9tZ2xYv0Rw7Lk\"",
+      "signature" : "sig1=:/JTI8wpPP3baPqvrod0w2z0fqZ4rjHUQYwFZbxDRESGw6I/J48VWskkoWqPuWplTtj5bW/WxGiQ5SqX275PzDw==:",
+      "retry-after" : "30"
+    },
+    "body" : "{\"status\":429,\"code\":\"rate_limited\",\"detail\":\"Too many requests\"}"
+  }
+}

@@ -1,9 +1,10 @@
 # License portal reference clients
 
-A license file is a signed document a vendor hands to its customer. An application checks it offline, with no server to ask: the vendor's public key proves where the file came from, and the file says which features it unlocks and until when. This repository shows how to do that check, for anyone writing a client of their own.
+A license file is a signed document a vendor hands to its customer. An application checks it offline, with no server to ask: the vendor's public key proves where the file came from, and the file says which features it unlocks and until when. An application that can reach the vendor's license portal can also validate its license key online, and trust the answer because it is signed by the same key. This repository shows how to do both, for anyone writing a client of their own.
 
 - [File format](#file-format): what a license file holds, layer by layer.
-- [`vectors/`](vectors): license files with known answers. Run your own verifier over them to prove it.
+- [Online validation](#online-validation): asking the portal whether a license is still valid.
+- [`vectors/`](vectors): license files and signed answers with known outcomes. Run your own verifier over them to prove it.
 - [`jvm/`](jvm): a small Java reference that passes every vector. Read it or copy from it.
 
 ## What a client does
@@ -69,6 +70,27 @@ A license file has three layers. The vectors are the precise reference; this is 
 | `license.metadata` | object | Values the vendor set, of any JSON type. Read each as the type you expect. |
 
 The two expiries are separate: a file is valid only while both its own `expiry` and `license.expiry` are in the future, or `null`. All times are UTC instants. Ignore any field you don't know, so files with fields added later still verify. A machine file has the armour `MACHINE FILE`, `typ` `machine`, and adds `seq` and `machine` (`id`, `fingerprint`); the references here don't read machine files yet.
+
+## Online validation
+
+`POST <tenant URL>/licenses/actions/validate-key` with `{"key": "<license key>", "scope": {"product": "<your product's id>"}}` answers `200` for every license state:
+
+```json
+{
+  "type": "validation", "ts": "2026-01-15T00:00:00Z", "valid": true, "code": "VALID", "detail": null,
+  "scope": {"product": "0192e4a0-0000-7000-8000-000000000001"},
+  "license": {
+    "id": "0192e9b3-0000-7000-8000-000000000001", "product": "0192e4a0-0000-7000-8000-000000000001",
+    "policy": "0192e4a2-0000-7000-8000-000000000001", "customer": "0192e8d5-0000-7000-8000-000000000001",
+    "status": "ACTIVE", "notBefore": "2026-01-01T00:00:00Z", "expiry": "2026-12-31T00:00:00Z",
+    "entitlements": ["API", "REPORTS"], "metadata": {"maxVersion": "3"}
+  }
+}
+```
+
+`valid` is `true` only with the code `VALID`. A refusal names why, such as `NOT_FOUND` (with `license` `null`), `REVOKED`, `SUSPENDED`, `EXPIRED` or `NOT_YET_VALID`, and the vendor may add codes later, so decide on `valid`. A request without a `key` or `scope.product` is a `400`.
+
+Ask for a signature on every request and accept only an answer that verifies: the [vectors' README](vectors/README.md#signed-answers) gives the headers to send, the checks and their order, and how to rebuild what the signature covers. Anything that doesn't verify is a network failure, never a refusal.
 
 ## Building
 
