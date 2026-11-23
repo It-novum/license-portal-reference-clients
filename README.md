@@ -1,10 +1,10 @@
 # License portal reference clients
 
-A license file is a signed document a vendor hands to its customer. An application checks it offline, with no server to ask: the vendor's public key proves where the file came from, and the file says which features it unlocks and until when. An application that can reach the vendor's license portal can also validate its license key online, and trust the answer because it is signed by the same key. This repository shows how to do both, for anyone writing a client of their own.
+A license file is a signed document a vendor hands to its customer. An application checks it offline, with no server to ask: the vendor's public key proves where the file came from, and the file says which features it unlocks and until when. An application that can reach the vendor's license portal can also validate its license key online, and trust the response because it is signed by the same key. This repository shows how to do both, for anyone writing a client of their own.
 
 - [File format](#file-format): what a license file holds, layer by layer.
 - [Online validation](#online-validation): asking the portal whether a license is still valid.
-- [`vectors/`](vectors): license files and signed answers with known outcomes. Run your own verifier over them to prove it.
+- [`vectors/`](vectors): license files with known outcomes. Run your own verifier over them to prove it.
 - [`jvm/`](jvm): a small Java reference that passes every vector. Read it or copy from it.
 
 ## What a client does
@@ -90,7 +90,66 @@ The two expiries are separate: a file is valid only while both its own `expiry` 
 
 `valid` is `true` only with the code `VALID`. A refusal names why, such as `NOT_FOUND` (with `license` `null`), `REVOKED`, `SUSPENDED`, `EXPIRED` or `NOT_YET_VALID`, and the vendor may add codes later, so decide on `valid`. A request without a `key` or `scope.product` is a `400`.
 
-Ask for a signature on every request and accept only an answer that verifies: the [vectors' README](vectors/README.md#signed-answers) gives the headers to send, the checks and their order, and how to rebuild what the signature covers. Anything that doesn't verify is a network failure, never a refusal.
+### Signed responses
+
+Ask for a signature on every request: `Accept-Signature: sig1=();keyid="<a compiled-in key's kid>";nonce="<fresh random text>"`. Send `Content-Digest: sha-256=:<base64 of the SHA-256 of the body>:` too, so the response is bound to the body you sent. The server always signs the same components, whatever the request lists, and returns the nonce among the signature's parameters.
+
+A response has one of these outcomes:
+
+| Outcome | Meaning | What the client does |
+|---|---|---|
+| `VALID` | A verified response with `valid` `true` for your product | Unlocks what the license holds |
+| `REFUSED` | A verified response with `valid` `false`, whatever its `code` | Treats the license as refused. Act on a `code` you know; one you don't know is still a refusal |
+| `WRONG_PRODUCT` | A verified response whose `license.product` isn't yours | Treats it as a refusal |
+| `ERROR` | A verified `4xx` other than `429` | Fixes the request; doesn't retry it, and changes no license state |
+| `NETWORK_FAILURE` | Anything else | Changes no license state, keeps any file it holds, and retries later |
+
+Anything that doesn't verify is a network failure, never a refusal: an attacker who can forge one could otherwise lock a customer out. The checks run in this order, and the first that fails decides:
+
+| Step | Check | Outcome when it fails |
+|---|---|---|
+| 1 | The status isn't `429` or `5xx`, which never say anything about the license | `NETWORK_FAILURE` |
+| 2 | `Signature-Input` and `Signature` both hold a member under the label you asked for: an inner list of components with parameters, and a byte sequence | `NETWORK_FAILURE` |
+| 3 | The components are exactly `"@method";req "@authority";req "@path";req "@query";req`, then `"content-digest";req` if and only if you sent `Content-Digest`, then `"@status" "content-digest" "date"` | `NETWORK_FAILURE` |
+| 4 | The parameters hold `created` as an integer, `keyid` as the `kid` you asked for, and `nonce` as the nonce you sent | `NETWORK_FAILURE` |
+| 5 | The response's `Content-Digest` holds a `sha-256` member equal to the SHA-256 of the body | `NETWORK_FAILURE` |
+| 6 | The signature verifies under the compiled-in key `keyid` names, over the signature base built from what you sent and the response's status, `Content-Digest` and `Date`, as below | `NETWORK_FAILURE` |
+| 7 | The response's `Date` is within 5 minutes of your clock | `NETWORK_FAILURE` |
+| 8 | The status is `200`: a `4xx` is `ERROR`, any other status `NETWORK_FAILURE` | `ERROR` or `NETWORK_FAILURE` |
+| 9 | The body is a JSON object with a boolean `valid`, a string `code`, and a `license` that is an object or `null`, and `valid` `true` comes with a license | `NETWORK_FAILURE` |
+| 10 | `license.product` is your product's id, when the response carries a license | `WRONG_PRODUCT` |
+| 11 | `valid` is `true` | `REFUSED` |
+
+A response that passes every step is `VALID`. Ignore any field you don't know, in the body and among the signature's parameters.
+
+The signature base is RFC 9421's: one line per component, `"<name>"`, `;req` for the request's parts, `: ` and the value, joined by a line feed, and last the line `"@signature-params": ` followed by the member's value exactly as `Signature-Input` holds it after `sig1=`. The values come from what you sent, never from the response:
+
+- `"@method";req`: the method, `POST`.
+- `"@authority";req`: the host you sent the request to, in lowercase, with its port only when it isn't the scheme's default.
+- `"@path";req` and `"@query";req`: the path and the query as you sent them, without decoding; the query with its leading `?`, and `?` alone when there was none.
+- `"content-digest";req`: the `Content-Digest` you sent.
+- `"@status"`, `"content-digest"` and `"date"`: the response's status code and its two headers.
+
+For example, for a validation sent with `Content-Digest`:
+
+```
+"@method";req: POST
+"@authority";req: license.example.com
+"@path";req: /api/tenants/acme/licenses/actions/validate-key
+"@query";req: ?
+"content-digest";req: sha-256=:<what you sent>:
+"@status": 200
+"content-digest": sha-256=:<the response's>:
+"date": Thu, 15 Jan 2026 00:00:00 GMT
+"@signature-params": ("@method";req "@authority";req "@path";req "@query";req "content-digest";req "@status" "content-digest" "date");created=1768435200;keyid="<kid>";nonce="<nonce>"
+```
+
+The signature is the bytes between the colons of the `Signature` member, base64-decoded, and it is Ed25519 over the UTF-8 bytes of the base.
+
+- **A refusal you asked to have signed can be trusted.** A signed `NOT_FOUND` is `REFUSED`, and a signed `400` is `ERROR`. An unsigned one is a network failure.
+- **The request's parts come from what you sent.** A response signed for another method, host, path or query doesn't verify, so a response to another call can't be handed to your client.
+- **Bind the body.** With `Content-Digest` sent, a response has to cover `"content-digest";req`. Without it, the server's response says nothing about the key you sent.
+- **A verified response's `Date` raises your clock mark,** as a verified file's `issued` does.
 
 ## Building
 

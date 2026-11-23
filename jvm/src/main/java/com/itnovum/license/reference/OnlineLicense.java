@@ -7,9 +7,9 @@ import java.util.UUID;
 import tools.jackson.databind.JsonNode;
 
 /**
- * The license a verified answer carries. It holds no names: a license key alone reaches it.
+ * The license a verified response carries. It holds no names: a license key alone reaches it.
  *
- * @param status the license's state as the portal names it, such as {@code ACTIVE} or {@code SUSPENDED}. Decide on the answer's outcome, never on this
+ * @param status the license's state as the portal names it, such as {@code ACTIVE} or {@code SUSPENDED}. Decide on the response's outcome, never on this
  * @param expiry when the license ends, empty when it never does
  * @param entitlements the feature codes the license unlocks, its policy's and its own
  * @param metadata the values the vendor set, its policy's with the license's own laid over them

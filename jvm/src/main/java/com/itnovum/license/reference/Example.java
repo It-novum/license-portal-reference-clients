@@ -76,6 +76,6 @@ public final class Example {
             System.out.println("Entitlements: " + String.join(", ", license.entitlements()));
         });
 
-        System.exit(validation.outcome() == AnswerOutcome.VALID ? 0 : 1);
+        System.exit(validation.outcome() == ResponseOutcome.VALID ? 0 : 1);
     }
 }

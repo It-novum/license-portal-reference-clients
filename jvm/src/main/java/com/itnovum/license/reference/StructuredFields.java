@@ -9,7 +9,7 @@ import java.util.Map;
 
 /**
  * Parses an RFC 8941 dictionary, the form of {@code Signature-Input}, {@code Signature} and {@code Content-Digest}. A value is a {@link String}, a {@code byte[]}, a {@link Long} or
- * {@link BigDecimal}, a {@link Token} or a {@link Boolean}, or an inner list of {@link Item}s. A field that doesn't parse throws {@link IllegalArgumentException}, and the caller treats the answer
+ * {@link BigDecimal}, a {@link Token} or a {@link Boolean}, or an inner list of {@link Item}s. A field that doesn't parse throws {@link IllegalArgumentException}, and the caller treats the response
  * as a network failure: never guess at a header the signature depends on.
  */
 final class StructuredFields {

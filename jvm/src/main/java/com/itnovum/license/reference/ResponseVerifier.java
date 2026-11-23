@@ -21,14 +21,14 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Checks an answer from the license portal against the request that asked for it. The checks run in a fixed order and the first that fails decides, so an answer has exactly one outcome, the one the
+ * Checks a response from the license portal against the request that asked for it. The checks run in a fixed order and the first that fails decides, so a response has exactly one outcome, the one the
  * conformance vectors give. It needs no network, so it can be tested with the vectors alone; {@link OnlineValidator} sends the request and hands both here.
  *
  * <p>
- * Everything about the request comes from {@link SentRequest}, what this client sent. The answer could have been made for another request, so nothing it says about the request is believed: a
+ * Everything about the request comes from {@link SentRequest}, what this client sent. The response could have been made for another request, so nothing it says about the request is believed: a
  * signature over another method, host, path, query or body simply doesn't verify.
  */
-public final class AnswerVerifier {
+public final class ResponseVerifier {
 
     private static final String ED25519 = "Ed25519";
     private static final JsonMapper JSON = JsonMapper.builder().enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS).build();
@@ -40,9 +40,9 @@ public final class AnswerVerifier {
 
     /**
      * @param product your product's id, the one its licenses name
-     * @param skew how far the answer's {@code Date} may be from {@code now}. Five minutes suits most machines
+     * @param skew how far the response's {@code Date} may be from {@code now}. Five minutes suits most machines
      */
-    public AnswerVerifier(ProductKeys keys, UUID product, ClockMark clockMark, Duration skew) {
+    public ResponseVerifier(ProductKeys keys, UUID product, ClockMark clockMark, Duration skew) {
         this.keys = keys;
         this.product = product;
         this.clockMark = clockMark;
@@ -50,26 +50,26 @@ public final class AnswerVerifier {
     }
 
     /**
-     * Checks the answer at {@code now}. Anything that doesn't verify comes back as {@link AnswerOutcome#NETWORK_FAILURE}, never as an exception.
+     * Checks the response at {@code now}. Anything that doesn't verify comes back as {@link ResponseOutcome#NETWORK_FAILURE}, never as an exception.
      */
-    public Validation verify(SentRequest sent, ReceivedAnswer answer, Instant now) {
+    public Validation verify(SentRequest sent, ReceivedResponse response, Instant now) {
         try {
-            return check(sent, answer, now);
+            return check(sent, response, now);
         } catch (Unverified | RuntimeException unverified) {
             return Validation.NETWORK_FAILURE;
         }
     }
 
-    private Validation check(SentRequest sent, ReceivedAnswer answer, Instant now) throws Unverified {
+    private Validation check(SentRequest sent, ReceivedResponse response, Instant now) throws Unverified {
         // A 429 or a 5xx says nothing about the license, signed or not.
-        var status = answer.status();
+        var status = response.status();
         if (status == 429 || status >= 500) {
             throw new Unverified();
         }
 
-        // A signature under the label this client asked for. Without one, the answer may come from anyone.
-        var input = StructuredFields.dictionary(answer.header("signature-input").orElseThrow(Unverified::new)).get(sent.label());
-        var signature = StructuredFields.dictionary(answer.header("signature").orElseThrow(Unverified::new)).get(sent.label());
+        // A signature under the label this client asked for. Without one, the response may come from anyone.
+        var input = StructuredFields.dictionary(response.header("signature-input").orElseThrow(Unverified::new)).get(sent.label());
+        var signature = StructuredFields.dictionary(response.header("signature").orElseThrow(Unverified::new)).get(sent.label());
         if (input == null || signature == null || !(input.value() instanceof List<?> components) || !(signature.value() instanceof byte[] signed)) {
             throw new Unverified();
         }
@@ -82,22 +82,22 @@ public final class AnswerVerifier {
             throw new Unverified();
         }
 
-        // The key and the nonce this client sent, so an answer to another request, or replayed from an earlier one, fails here.
+        // The key and the nonce this client sent, so a response to another request, or replayed from an earlier one, fails here.
         var parameters = input.parameters();
         if (!(parameters.get("created") instanceof Long) || !sent.keyid().toString().equals(parameters.get("keyid")) || !sent.nonce().equals(parameters.get("nonce"))) {
             throw new Unverified();
         }
 
-        // The body the answer's Content-Digest names, which the signature covers in its turn.
-        var body = answer.body();
-        var digest = answer.header("content-digest").orElseThrow(Unverified::new);
+        // The body the response's Content-Digest names, which the signature covers in its turn.
+        var body = response.body();
+        var digest = response.header("content-digest").orElseThrow(Unverified::new);
         var sha256 = StructuredFields.dictionary(digest).get("sha-256");
         if (sha256 == null || !(sha256.value() instanceof byte[] claimed) || !MessageDigest.isEqual(claimed, sha256(body))) {
             throw new Unverified();
         }
 
-        // The signature, over the base rebuilt from what this client sent and the answer's own status, digest and date.
-        var date = answer.header("date").orElseThrow(Unverified::new);
+        // The signature, over the base rebuilt from what this client sent and the response's own status, digest and date.
+        var date = response.header("date").orElseThrow(Unverified::new);
         var values = new ArrayList<>(List.of(sent.method(), sent.authority(), sent.uri().getRawPath(), "?" + Optional.ofNullable(sent.uri().getRawQuery()).orElse("")));
         sent.contentDigest().ifPresent(values::add);
         values.addAll(List.of(String.valueOf(status), digest, date));
@@ -109,7 +109,7 @@ public final class AnswerVerifier {
         base.append("\"@signature-params\": ").append(input.text());
         verifySignature(sent.keyid(), base.toString(), signed);
 
-        // A Date far from now means the answer is old, or this clock is off; either way it proves nothing about the license now. A verified Date is a time this application has seen.
+        // A Date far from now means the response is old, or this clock is off; either way it proves nothing about the license now. A verified Date is a time this application has seen.
         var dated = instant(date);
         if (Duration.between(dated, now).abs().compareTo(skew) > 0) {
             throw new Unverified();
@@ -120,7 +120,7 @@ public final class AnswerVerifier {
         // A verified refusal of the request itself, which a retry won't change.
         var json = object(body);
         if (status >= 400 && status < 500) {
-            return new Validation(AnswerOutcome.ERROR, json.map(node -> node.path("code")).filter(JsonNode::isString).map(JsonNode::asString), Optional.empty());
+            return new Validation(ResponseOutcome.ERROR, json.map(node -> node.path("code")).filter(JsonNode::isString).map(JsonNode::asString), Optional.empty());
         }
 
         if (status != 200 || json.isEmpty() || !json.get().path("valid").isBoolean() || !json.get().path("code").isString()) {
@@ -134,13 +134,13 @@ public final class AnswerVerifier {
             throw new Unverified();
         }
 
-        // The product, because the vendor's keys sign answers about every product it sells.
+        // The product, because the vendor's keys sign responses about every product it sells.
         if (license.filter(held -> !product.equals(held.product())).isPresent()) {
-            return new Validation(AnswerOutcome.WRONG_PRODUCT, code, Optional.empty());
+            return new Validation(ResponseOutcome.WRONG_PRODUCT, code, Optional.empty());
         }
 
         // Decide on valid, never on the code, so a code added later is still a plain refusal.
-        return new Validation(valid ? AnswerOutcome.VALID : AnswerOutcome.REFUSED, code, license);
+        return new Validation(valid ? ResponseOutcome.VALID : ResponseOutcome.REFUSED, code, license);
     }
 
     private static List<String> rendered(List<?> components) {
@@ -231,7 +231,7 @@ public final class AnswerVerifier {
     }
 
     /**
-     * An answer that doesn't verify. It never leaves this class: {@link #verify} turns it into a network failure.
+     * A response that doesn't verify. It never leaves this class: {@link #verify} turns it into a network failure.
      */
     private static final class Unverified extends Exception {
 

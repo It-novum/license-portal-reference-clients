@@ -17,8 +17,8 @@ import java.util.UUID;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Validates a license key with the license portal and verifies the signed answer. Every request asks for a signature with a fresh nonce and binds its body with {@code Content-Digest}, and
- * {@link AnswerVerifier} decides what the answer means. A lost connection, a timeout or an answer that doesn't verify is {@link AnswerOutcome#NETWORK_FAILURE}, never an exception.
+ * Validates a license key with the license portal and verifies the signed response. Every request asks for a signature with a fresh nonce and binds its body with {@code Content-Digest}, and
+ * {@link ResponseVerifier} decides what the response means. A lost connection, a timeout or a response that doesn't verify is {@link ResponseOutcome#NETWORK_FAILURE}, never an exception.
  */
 public final class OnlineValidator {
 
@@ -30,19 +30,19 @@ public final class OnlineValidator {
     private final URI tenant;
     private final UUID keyid;
     private final UUID product;
-    private final AnswerVerifier verifier;
+    private final ResponseVerifier verifier;
     private final HttpClient http;
 
     /**
      * @param tenant the vendor's base URL, which includes its tenant, such as {@code https://license.example.com/api/tenants/acme}
      * @param keyid the compiled-in key to ask for, the vendor's tenant key
-     * @param product your product's id, sent with every validation and checked in every answer
+     * @param product your product's id, sent with every validation and checked in every response
      */
     public OnlineValidator(URI tenant, ProductKeys keys, UUID keyid, UUID product, ClockMark clockMark, Duration skew, HttpClient http) {
         this.tenant = tenant;
         this.keyid = keyid;
         this.product = product;
-        this.verifier = new AnswerVerifier(keys, product, clockMark, skew);
+        this.verifier = new ResponseVerifier(keys, product, clockMark, skew);
         this.http = http;
     }
 
@@ -57,7 +57,7 @@ public final class OnlineValidator {
             var headers = new HashMap<String, String>();
             response.headers().map().forEach((name, values) -> headers.put(name, String.join(", ", values)));
 
-            return verifier.verify(sent, new ReceivedAnswer(response.statusCode(), headers, response.body()), Instant.now());
+            return verifier.verify(sent, new ReceivedResponse(response.statusCode(), headers, response.body()), Instant.now());
         } catch (IOException | RuntimeException unreachable) {
             return Validation.NETWORK_FAILURE;
         } catch (InterruptedException interrupted) {
@@ -75,7 +75,7 @@ public final class OnlineValidator {
     }
 
     /**
-     * What this request sends: a fresh nonce, so an answer recorded earlier can't be replayed, and the digest of its body, so an answer about another key doesn't verify.
+     * What this request sends: a fresh nonce, so a response recorded earlier can't be replayed, and the digest of its body, so a response about another key doesn't verify.
      */
     SentRequest sent(byte[] body) {
         var nonce = new byte[16];

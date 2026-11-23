@@ -1,6 +1,6 @@
 # Java reference client
 
-A small, readable example of verifying license files offline and validating a license key online, for anyone writing a client of their own. It makes every check a license file or a signed answer needs, in the order that gives each one outcome, and passes the conformance vectors in [`vectors`](../vectors). The [file format](../README.md#file-format) is described in the repository's README. Copy what you need: it targets Java 17 and uses only the JDK and Jackson.
+A small, readable example of verifying license files offline and validating a license key online, for anyone writing a client of their own. It makes every check a license file or a signed response needs, in the order that gives each one outcome, and passes the conformance vectors in [`vectors`](../vectors). The [file format](../README.md#file-format) is described in the repository's README. Copy what you need: it targets Java 17 and uses only the JDK and Jackson.
 
 ## What your build compiles in
 
@@ -50,11 +50,11 @@ switch (validation.outcome()) {
 }
 ```
 
-- **Every request asks for a signed answer.** It sends `Accept-Signature` naming the compiled-in key `TENANT_KEY_ID`, with a fresh random nonce, and `Content-Digest` with the SHA-256 of its body. The answer has to be signed by that key, over the request's method, host, path, query and digest, and carry the same nonce. Ask for the vendor's tenant key, which signs answers for every product it sells.
-- **Only a verified answer counts.** An unsigned answer, one signed for another request, a `429`, a `5xx`, a timeout or a lost connection is `NETWORK_FAILURE`: nothing about the license changes, and a file you hold stays valid. Retry with backoff and honour `Retry-After`. An attacker who can forge a refusal could otherwise lock a customer out.
-- **Decide on the outcome, never on a code you don't know.** A `REFUSED` answer carries a code, such as `EXPIRED` or `SUSPENDED`, which the vendor may add to; any code is still a refusal.
-- **`AnswerVerifier` makes the checks without a network,** given the request you sent and the answer you got, so you can test your own code with the answer vectors. Its checks run in the order the vectors' README gives.
-- **A verified answer's `Date` raises the clock mark,** so a clock set back after an online check can't revive an expired file.
+- **Every request asks for a signed response.** It sends `Accept-Signature` naming the compiled-in key `TENANT_KEY_ID`, with a fresh random nonce, and `Content-Digest` with the SHA-256 of its body. The response has to be signed by that key, over the request's method, host, path, query and digest, and carry the same nonce. Ask for the vendor's tenant key, which signs responses for every product it sells.
+- **Only a verified response counts.** An unsigned response, one signed for another request, a `429`, a `5xx`, a timeout or a lost connection is `NETWORK_FAILURE`: nothing about the license changes, and a file you hold stays valid. Retry with backoff and honour `Retry-After`. An attacker who can forge a refusal could otherwise lock a customer out.
+- **Decide on the outcome, never on a code you don't know.** A `REFUSED` response carries a code, such as `EXPIRED` or `SUSPENDED`, which the vendor may add to; any code is still a refusal.
+- **`ResponseVerifier` makes the checks without a network,** given the request you sent and the response you got, so you can test your own code without a server. Its checks run in the order the [repository's README](../README.md#signed-responses) gives.
+- **A verified response's `Date` raises the clock mark,** so a clock set back after an online check can't revive an expired file.
 
 ## Running the example
 

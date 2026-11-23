@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * What a request asked for and what it sent, kept so its answer is checked against the request itself and never against anything the answer says about it.
+ * What a request asked for and what it sent, kept so its response is checked against the request itself and never against anything the response says about it.
  *
  * @param uri the request's full URI, exactly as sent
  * @param label the label the request asked the signature under, such as {@code sig1}
